@@ -8,7 +8,7 @@ Because why not.
 
 1. Lex and parse into S-exprs
 
-2. CPS/ANF, desugar, normalise
+2. convert to SSA, desugar, normalise
 
 3. generate something
 
