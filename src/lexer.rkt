@@ -3,7 +3,7 @@
 (require parser-tools/lex
          parser-tools/yacc
          (prefix-in : parser-tools/lex-sre)
-         "maybe.rkt")
+         #;"maybe.rkt")
 
 ;; Parse the reduced-c grammar into s-expressions.
 
@@ -72,12 +72,12 @@
   [integer    (:+ numeric)]
   [float      (:: (:+ numeric) #\. (:* numeric))]
   [identifier (:: alphabetic (:* (:or alphabetic numeric "_-")))]
-  [string ]
+  [string     (:: #\" (:* (:~ #\")) #\")]
   )
 
-
+;; input-port -> symbol
+;; generates successive symbols while consuming input port
 (define reducedc-lexer
-  ;(let ((continue (λ (tok) (cons tok (reducedc-lexer input-port)))))
   (lexer
    ; skip whitespace
    [whitespace (reducedc-lexer input-port)]
@@ -89,60 +89,60 @@
    [string     (token-STRING lexeme)]
 
    ; constants
-   [(eof)       '()              ]
-   ["const"     (token-CONST    )]
-   ["function"  (token-FUNCTION )]
-   ["struct"    (token-STRUCT   )]
-   ["auto"      (token-AUTO     )]
-   ["break"     (token-BREAK    )]
-   ["continue"  (token-CONTINUE )]
-   ["do"        (token-DO       )]
-   ["for"       (token-FOR      )]
-   ["while"     (token-WHILE    )]
-   ["switch"    (token-SWITCH   )]
-   ["case"      (token-CASE     )]
-   ["default"   (token-DEFAULT  )]
-   ["if"        (token-IF       )]
-   ["else"      (token-ELSE     )]
-   ["out"       (token-OUT      )]
-   ["inout"     (token-INOUT    )]
-   ["in"        (token-IN       )]
-   ["float"     (token-FLOAT_T  )]
-   ["int"       (token-INT_T    )]
-   ["void"      (token-VOID_T   )]
-   ["bool"      (token-BOOL_T   )]
-   ["true"      (token-TRUE     )]
-   ["false"     (token-FALSE    )]
-   ["return"    (token-RETURN   )]
-   [";"         (token-SEMI     )]
-   ["+"         (token-PLUS     )]
-   ["-"         (token-MINUS    )]
-   ["*"         (token-STAR     )]
-   ["/"         (token-SLASH    )]
-   ["%"         (token-PERCENT  )]
-   ["<"         (token-LT       )]
-   ["<="        (token-LE       )]
-   [">"         (token-GT       )]
-   [">="        (token-GE       )]
-   ["="         (token-ASSIGN   )]
-   ["=="        (token-EQ       )]
-   ["!="        (token-NEQ      )]
-   ["&&"        (token-ANDAND   )]
-   ["&"         (token-AND      )]
-   ["||"        (token-OROR     )]
-   ["|"         (token-OR       )]
-   ["!"         (token-BANG     )]
-   ["."         (token-DOT      )]
-   [","         (token-COMMA    )]
-   ["["         (token-LBRACK   )]
-   ["]"         (token-RBRACK   )]
-   ["("         (token-LPAR     )]
-   ["]"         (token-RPAR     )]
-   ["{"         (token-LBRACE   )]
-   ["]"         (token-RBRACE   )]
+   [(eof)       '()             ]
+   ["const"    (token-CONST    )]
+   ["function" (token-FUNCTION )]
+   ["struct"   (token-STRUCT   )]
+   ["auto"     (token-AUTO     )]
+   ["break"    (token-BREAK    )]
+   ["continue" (token-CONTINUE )]
+   ["do"       (token-DO       )]
+   ["for"      (token-FOR      )]
+   ["while"    (token-WHILE    )]
+   ["switch"   (token-SWITCH   )]
+   ["case"     (token-CASE     )]
+   ["default"  (token-DEFAULT  )]
+   ["if"       (token-IF       )]
+   ["else"     (token-ELSE     )]
+   ["out"      (token-OUT      )]
+   ["inout"    (token-INOUT    )]
+   ["in"       (token-IN       )]
+   ["float"    (token-FLOAT_T  )]
+   ["int"      (token-INT_T    )]
+   ["void"     (token-VOID_T   )]
+   ["bool"     (token-BOOL_T   )]
+   ["true"     (token-TRUE     )]
+   ["false"    (token-FALSE    )]
+   ["return"   (token-RETURN   )]
+   [";"        (token-SEMI     )]
+   ["+"        (token-PLUS     )]
+   ["-"        (token-MINUS    )]
+   ["*"        (token-STAR     )]
+   ["/"        (token-SLASH    )]
+   ["%"        (token-PERCENT  )]
+   ["<"        (token-LT       )]
+   ["<="       (token-LE       )]
+   [">"        (token-GT       )]
+   [">="       (token-GE       )]
+   ["="        (token-ASSIGN   )]
+   ["=="       (token-EQ       )]
+   ["!="       (token-NEQ      )]
+   ["&&"       (token-ANDAND   )]
+   ["&"        (token-AND      )]
+   ["||"       (token-OROR     )]
+   ["|"        (token-OR       )]
+   ["!"        (token-BANG     )]
+   ["."        (token-DOT      )]
+   [","        (token-COMMA    )]
+   ["["        (token-LBRACK   )]
+   ["]"        (token-RBRACK   )]
+   ["("        (token-LPAR     )]
+   ["]"        (token-RPAR     )]
+   ["{"        (token-LBRACE   )]
+   ["]"        (token-RBRACE   )]
    ))
 
-;; source -> sexpr
+;;  (() -> symbol) -> sexpr
 (define reducedc-parser
   (parser
    (tokens reducedc-datas reducedc-literals)
@@ -325,7 +325,7 @@
 
     (expr0
      [(expr0 OROR expr1) ...]
-     [(expr1) ...])
+     [(expr1) $1])
 
     (expr1
      [(expr1 ANDAND expr2) ...]
@@ -407,4 +407,4 @@
 
 
 (let ((test1 (open-input-file "test/m001.rc")))
- (reducedc-parser (reducedc-lexer test1)))
+ (reducedc-parser (λ () (reducedc-lexer test1))))
