@@ -152,19 +152,19 @@
    (grammar
     (program
      [() '()]
-     [(global-decl) ...]
-     [(global-decl global-decl) ...])
+     [(global-decl) $1]
+     [(global-decl global-decl) (cons $1 $2)])
 
     ;; (args [(exp)            (b o (list $1) 1 1)]
     ;;       [(exp COMMA args) (b o (cons $1 $3) 1 3)]
     ;;       [() '()])
     (global-decl
-     [(extern-decl) ...]
-     [(var-decl) ...]
-     [(const-decl) ...]
-     [(struct-def-decl) ...]
-     [(func-decl) ...]
-     [(func-def) ...])
+     [(extern-decl)     $1]
+     [(var-decl)        $1]
+     [(const-decl)      $1]
+     [(struct-def-decl) $1]
+     [(func-decl)       $1]
+     [(func-def)        $1])
 
     (extern-decl
      [(EXTERN decorated-basic-type ID ?array-list SEMI) ...])
@@ -231,16 +231,16 @@
      [(struct-type pointer-list) ...])
 
     (basic-type
-     [(INT) ...]
-     [(FLOAT) ...]
-     [(BOOL) ...])
+     [(INT_T)   $1]
+     [(FLOAT_T) $1]
+     [(BOOL_T)  $1])
 
     (struct-type
-     [(ID)...])
+     [(ID) $1])
 
     (ret-type
-     [(type) ...]
-     [(VOID) ...])
+     [(type) $1]
+     [(VOID) $1])
 
     (?pointer-list
      [() ...]
@@ -261,19 +261,19 @@
      [(stmt stmt-list)...])
 
     (stmt
-     [(var-decl) ...]
-     [(const-decl) ...]
-     [(code-block) ...]
-     [(expr SEMI) ...]
-     [(if-stmt) ...]
-     [(while-stmt) ...]
-     [(foreach-stmt) ...]
-     [(BREAK SEMI) ...]
-     [(CONTINUE SEMI) ...]
-     [(EXIT LPAR expr RPAR SEMI) ...]
+     [(var-decl)                    $1]
+     [(const-decl)                  $1]
+     [(code-block)                  $1]
+     [(expr SEMI)                   $1]
+     [(if-stmt)                     $1]
+     [(while-stmt)                  $1]
+     [(foreach-stmt)                $1]
+     [(BREAK SEMI)                  $1]
+     [(CONTINUE SEMI)               $1]
+     [(EXIT LPAR expr RPAR SEMI)    (list $1 $3)]
 
-     [(RETURN SEMI)...]
-     [(RETURN expr SEMI)...]
+     [(RETURN SEMI) $1]
+     [(RETURN expr SEMI) (list $1 $2)]
      ;read
      [(CIN ISTREAM designator SEMI) ...]
      [(COUT OSTREAM write-pair-list SEMI) ...]
