@@ -88,11 +88,13 @@
    [identifier (token-ID (string->symbol lexeme))]
    [string     (token-STRING lexeme)]
 
-   ; constants
+   [(:: "(" whitespace ")") (token-VOID)]
+
+    ; constants
    [(eof)       '()             ]
    ["const"    (token-CONST    )]
    ["function" (token-FUNCTION )]
-   ["struct"   (token-STRUCT   )]
+   ["structdef"(token-STRUCT   )]
    ["auto"     (token-AUTO     )]
    ["break"    (token-BREAK    )]
    ["continue" (token-CONTINUE )]
@@ -136,10 +138,11 @@
    [","        (token-COMMA    )]
    ["["        (token-LBRACK   )]
    ["]"        (token-RBRACK   )]
+   ["()"       (token-VOID     )]
    ["("        (token-LPAR     )]
-   ["]"        (token-RPAR     )]
+   [")"        (token-RPAR     )]
    ["{"        (token-LBRACE   )]
-   ["]"        (token-RBRACE   )]
+   ["}"        (token-RBRACE   )]
    ))
 
 (define (just x)
@@ -180,11 +183,11 @@
 
     (var-decl
      [(?static decorated-type ID ?array-list ?init SEMI)
-      `('VAR ,(? $1) ,$2 ,$3 ,(? $4) ,(? $5))    ]
+      `(VAR ,(? $1) ,$2 ,$3 ,(? $4) ,(? $5))    ]
      [(?static AUTO ID ASSIGN expr SEMI)
-      `('VAR ,(? $1) $2 $3 $5) ]
+      `(VAR ,(? $1) $2 $3 $5) ]
      [(?static struct-type ID ?array-list ?ctor-call SEMI)
-      `('VAR ,(? $1) $2 $3 ,(? $4) ,(? $5))])
+      `(VAR ,(? $1) $2 $3 ,(? $4) ,(? $5))])
 
     (const-decl
      [(?static CONST basic-type ID ASSIGN const-expr SEMI)
@@ -202,7 +205,9 @@
               field-vars-list
               ctor-dtor-list
               ?field-funcs-list
-              RBRACE SEMI) ...])
+              RBRACE SEMI)
+
+      `($1 ,$2 )])
 
     (field-vars-list
      [(decorated-type ID ?array-list SEMI) ...]
@@ -214,12 +219,13 @@
 
     (ctor-dtor-decl
      ; ctor
-     [(ID LPAREN ?param-list RPAREN
+     [(ID VOID
+          LBRACE ?stmt-list RPAREN) ...]
+     [(ID LPAR param-list RPAR
           LBRACE ?stmt-list RPAREN) ...]
 
      ; dtor
-     [(TILDE ID
-             LPAREN RPAREN
+     [(TILDE ID VOID
              LBRACE ?stmt-list RBRACE) ...])
 
     (field-funcs-list
@@ -228,12 +234,20 @@
 
     (func-def
      [(FUNCTION COLON ret-type ?ref ID
-                LPAREN ?param-list RPAREN
+                VOID
+                LBRACE ?stmt-list RBRACE) ...]
+
+     [(FUNCTION COLON ret-type ?ref ID
+                LPAR param-list RPAR
                 LBRACE ?stmt-list RBRACE) ...])
 
     (func-decl
      [(EXTERN FUNCTION COLON ret-type ID
-              LPAREN ?param-list RPAREN
+              VOID
+              SEMI) ...]
+
+     [(EXTERN FUNCTION COLON ret-type ID
+              LPAR param-list RPAR
               SEMI) ...])
 
     ; omfg, can this be simplified
@@ -285,6 +299,7 @@
      [(foreach-stmt)                $1]
      [(BREAK SEMI)                  $1]
      [(CONTINUE SEMI)               $1]
+;;     [(EXIT VOID SEMI)              (list $1 $3)]
      [(EXIT LPAR expr RPAR SEMI)    (list $1 $3)]
 
      [(RETURN SEMI) $1]
@@ -295,9 +310,9 @@
      [(NEW designator ?ctor-call SEMI) ...]
      [(DELETE designator SEMI) ...])
 
-    (?param-list
-     [() '()]
-     [(param-decl COMMA ?param-list)....])
+    (param-list
+     [(param-decl) '()]
+     [(param-decl COMMA param-list)....])
     (param-decl
      [(type ?ref ID ?array-list) ....])
 
@@ -308,7 +323,8 @@
      [(ASSIGN expr)...]
      [() ...])
     (?ctor-call
-     [(COLON LPAR ?expr-list RPAR)....]
+     [(COLON VOID)....]
+     [(COLON LPAR expr-list RPAR)....]
      [() ...])
     (if-stmt
      [(IF expr code-block ?else)...])
@@ -330,9 +346,9 @@
     (const-expr
      [(expr)...])
 
-    (?expr-list
-     [() ...]
-     [(expr COMMA ?expr-list) ...])
+    (expr-list
+     [(expr COMMA expr-list) ...]
+     [(expr) ...])
 
     (expr
      [(designator ASSIGN expr) ...]
@@ -404,7 +420,8 @@
      [(designator1 LBRACK expr RBRACK) ...]
      [(designator1 ARROW ID) ...]
      [(designator1 inc-dec-op) ...]
-     [(designator1 LPAR ?expr-list RPAR) ...]
+     [(designator1 VOID) ...]
+     [(designator1 LPAR expr-list RPAR) ...]
      [(designator2) ...])
     (desingator2
      [(PLUS desingator2) ...]
