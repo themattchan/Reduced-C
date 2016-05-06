@@ -63,6 +63,7 @@
    BANG
    DOT
    COMMA
+   TILDE
    LBRACK
    RBRACK
    LPAR
@@ -139,6 +140,7 @@
    ["!"        (token-BANG     )]
    ["."        (token-DOT      )]
    [","        (token-COMMA    )]
+   ["~"        (token-TILDE    )]
    ["["        (token-LBRACK   )]
    ["]"        (token-RBRACK   )]
    ["()"       (token-VOID     )]
