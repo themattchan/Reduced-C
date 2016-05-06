@@ -414,8 +414,8 @@
      [(SLASH) 'DIVIDE]
      [(PERCENT) 'MOD])
     (inc-dec-op
-     [(PLUSPLUS) $1]
-     [(MINUSMINUS) $1])
+     [(PLUSPLUS) 'INCREMENT]
+     [(MINUSMINUS) 'DECREMENT])
 
     ;; TODO: need some forms for these "functions"
     ;; should generate somewhat normalized code
