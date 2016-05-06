@@ -371,19 +371,19 @@
      [(designator ASSIGN expr) `(ASSIGN ,$1 ,$3)]
      [(expr0) $1])
     (expr0
-     [(expr0 OROR expr1) `(LOR ,$1 ,$3)]
+     [(expr0 OROR expr1) `(OR ,$1 ,$3)]
      [(expr1) $1])
     (expr1
-     [(expr1 ANDAND expr2) `(LAND ,$1 ,$3)]
+     [(expr1 ANDAND expr2) `(AND ,$1 ,$3)]
      [(expr2) $1])
     (expr2
-     [(expr2 OR expr3) `(BOR ,$1 ,$3)]
+     [(expr2 OR expr3) `(BITWISE-OR ,$1 ,$3)]
      [(expr3) $1])
     (expr3
-     [(expr3 XOR expr4) `(BXOR ,$1 ,$3)]
+     [(expr3 XOR expr4) `(BITWISE-XOR ,$1 ,$3)]
      [(expr4) $1])
     (expr4
-     [(expr4 AND expr5) `(BAND ,$1 ,$3)]
+     [(expr4 AND expr5) `(BiTWISE-AND ,$1 ,$3)]
      [(expr5) $1])
     (expr5
      [(expr5 comparison expr6) `(,$2 ,$1 ,$3)]
