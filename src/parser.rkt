@@ -270,14 +270,9 @@
       (rc/extern-func $5 $4 $6)])
 
     ;; TODO TODO TODO
-    ; omfg, can this be simplified
     (type
-     [(decorated-type) ...]
-     [(struct-type)...])
-
-    (decorated-type
      [(basic-type ?pointer-list) ...]
-     [(struct-type pointer-list) ...])
+     [(struct-type ?pointer-list) ...])
 
     (basic-type
      [(INT_T)   $1]
