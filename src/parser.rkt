@@ -2,7 +2,8 @@
 
 (require parser-tools/lex
          parser-tools/yacc
-         (prefix-in : parser-tools/lex-sre))
+         (prefix-in : parser-tools/lex-sre)
+         "rc-types.rkt")
 
 ;; Lex and Parse the reduced-c grammar into s-expressions.
 
@@ -160,7 +161,7 @@
     (program
      [() '()]
      [(global-decl) $1]
-     [(global-decl global-decl) (cons $1 $2)])
+     [(global-decl program) (cons $1 $2)])
 
     ;; (args [(exp)            (b o (list $1) 1 1)]
     ;;       [(exp COMMA args) (b o (cons $1 $3) 1 3)]
@@ -175,8 +176,7 @@
 
     (extern-decl
      [(EXTERN decorated-basic-type ID ?array-list SEMI)
-      `(,$1 ,$2 ,$3 ,$4)
-        ])
+      `(,$1 ,$2 ,$3 ,$4) ])
 
     (var-decl
      [(?static decorated-type ID ?array-list ?init SEMI)
@@ -204,48 +204,61 @@
               ?field-funcs-list
               RBRACE SEMI)
 
-      `($1 ,$2 )])
+      (rc/struct $2 $4 $5 $6) ])
 
     (field-vars-list
-     [(decorated-type ID ?array-list SEMI) ...]
-     [(field-vars-list decorated-type ID ?array-list SEMI) ...])
+     [(field-var) $1]
+     [(field-var field-vars-list) (cons $1 $2)])
+
+    (field-var
+     [(decorated-type ID ?array-list SEMI)
+      (rc/var $2 $1 $3)])
+
 
     (ctor-dtor-list
-     [() ...]
-     [(ctor-dtor-decl ctor-dtor-list) ...])
+     [() '()]
+     [(ctor-dtor-decl ctor-dtor-list) (cons $1 $2)])
 
     (ctor-dtor-decl
      ; ctor
      [(ID VOID
-          LBRACE ?stmt-list RPAREN) ...]
+          LBRACE ?stmt-list RPAREN)
+      (rc/ctor $1 $2 $4_)]
      [(ID LPAR param-list RPAR
-          LBRACE ?stmt-list RPAREN) ...]
+          LBRACE ?stmt-list RPAREN)
+      (rc/ctor $1 $2 $4_)]
 
      ; dtor
      [(TILDE ID VOID
-             LBRACE ?stmt-list RBRACE) ...])
+             LBRACE ?stmt-list RBRACE)
+      (rc/dtor $2 $5)])
 
     (field-funcs-list
-     [() ...]
-     [(func-def field-funcs-list) ...])
+     [() '()]
+     [(func-def field-funcs-list) (cons $1 $2)])
 
     (func-def
      [(FUNCTION COLON ret-type ?ref ID
                 VOID
-                LBRACE ?stmt-list RBRACE) ...]
+                LBRACE ?stmt-list RBRACE)
+
+      (rc/func $5 $3 $4 $6 $8)]
 
      [(FUNCTION COLON ret-type ?ref ID
                 LPAR param-list RPAR
-                LBRACE ?stmt-list RBRACE) ...])
+                LBRACE ?stmt-list RBRACE)
+      (rc/func $5 $3 $4 $6 $8)])
 
     (func-decl
      [(EXTERN FUNCTION COLON ret-type ID
               VOID
-              SEMI) ...]
+              SEMI)
+      (rc/func-sig ($5 $4 $6))]
 
      [(EXTERN FUNCTION COLON ret-type ID
               LPAR param-list RPAR
-              SEMI) ...])
+              SEMI)
+      (rc/func-sig ($5 $4 $6))])
 
     ; omfg, can this be simplified
     (type
