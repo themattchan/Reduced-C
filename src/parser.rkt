@@ -271,8 +271,8 @@
 
     ;; TODO TODO TODO
     (type
-     [(basic-type ?pointer-list) ...]
-     [(struct-type ?pointer-list) ...])
+     [(basic-type ?pointer-list) (rc/type $1 $2)]
+     [(struct-type ?pointer-list) (rc/type $1 $2)])
 
     (basic-type
      [(INT_T)   $1]
@@ -286,14 +286,9 @@
      [(type) $1]
      [(VOID) $1])
 
-    ;; ?pointer-list :: int >= 0
     (?pointer-list
      [() 0]
-     [(pointer-list) $1])
-    ;; pointer-list :: int > 0
-    (pointer-list
-     [(STAR pointer-list) (add1 $2)]
-     [() 0])
+     [(STAR pointer-list) (add1 $2)])
 
     (?array-list
      [() '()]

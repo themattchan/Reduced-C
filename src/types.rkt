@@ -22,8 +22,7 @@
 (struct var (id static type arrays value))
 (struct val (id static type value))
 
-(struct base-t ())
-(struct struct-t ())
+(struct type (id ptrs))
 
 (struct block (code))
 
