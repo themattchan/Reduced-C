@@ -337,7 +337,7 @@
      [(AND) 'REF])
 
     (?init
-     [(ASSIGN expr)...]
+     [(ASSIGN expr) $2]
      [() 'VOID])
     (?ctor-call
      [(COLON VOID)....]
@@ -353,6 +353,7 @@
     (foreach-stmt
      [(FOREACH LPAR type ?ref ID COLON expr RPAR
                code-block)...])
+
     (write-pair-list
      [(write-pair) ...]
      [(write-pair OSTREAM write-pair-list)...])
@@ -383,7 +384,7 @@
      [(expr3 XOR expr4) `(BITWISE-XOR ,$1 ,$3)]
      [(expr4) $1])
     (expr4
-     [(expr4 AND expr5) `(BiTWISE-AND ,$1 ,$3)]
+     [(expr4 AND expr5) `(BITWISE-AND ,$1 ,$3)]
      [(expr5) $1])
     (expr5
      [(expr5 comparison expr6) `(,$2 ,$1 ,$3)]
@@ -420,9 +421,7 @@
     ;; TODO: need some forms for these "functions"
     ;; should generate somewhat normalized code
 
-    ;; (FUNCALL fun arg-list)
-    ;; how to distinguish FUNCALLs from everything else?
-    ;; mark everything as FUNCALL
+    ;; TODO: translate all pointer arithmetic to PTR-INC and PTR-DEC
 
     (designator [(designator0) $1])
 
@@ -430,24 +429,25 @@
      [(STAR desingator0) `(DEREF ,$2)]
      [(AND desingator0) `(REF ,$2)]
      [(BANG desingator0) `(NOT ,$2)]
-     [(SIZEOF LPAR desingator0 RPAR) `(,$1 (,$3))] ; hmmm... treat these all as funcalls
-     [(SIZEOF LPAR type ?array-list RPAR) `(,$1 (,$3 ,$4))]
-     [(LPAR decorated-type RPAR designator0) `(CAST (,$2 ,$4))]
+     ; SIZEOF is overloaded
+     [(SIZEOF LPAR desingator0 RPAR) `(,$1 ,$3)]
+     [(SIZEOF LPAR type ?array-list RPAR) `(,$1 ,$3 ,$4)]
+     [(LPAR decorated-type RPAR designator0) `(CAST ,$2 ,$4)]
      [(inc-dec-op desingator0) `(,(string->symbol (~a 'PRE- $1)) ,$2)]
      [(desingator1) $1])
 
     (designator1
      [(designator1 DOT ID) `(MEMBER ,$1 ,$3)]
-     [(designator1 LBRACK expr RBRACK) ...] ; array access
+     [(designator1 LBRACK expr RBRACK) `(DEREF (PTR-INC ,$1 ,$3))] ; array access
      [(designator1 ARROW ID) `(MEMBER (DEREF ,$1) ,$3)]
      [(designator1 inc-dec-op) `(,(string->symbol (~a 'POST- $1)) ,$2)]
-     [(designator1 VOID) `(,$1 ())]
-     [(designator1 LPAR expr-list RPAR) `(,$1 ,$3)]
+     [(designator1 VOID) `(,$1 ,$2)]
+     [(designator1 LPAR expr-list RPAR) `(,$1 ,@$3)]
      [(designator2) $1])
 
     (designator2
-     [(PLUS designator2) `(POSITIVE ,$2)]
-     [(MINUS designator2) `(NEGATIVE ,$2)]
+     [(PLUS designator2) ,$2]
+     [(MINUS designator2) `(NEGATE ,$2)]
      [(LPAR expr RPAR) $2] ;; is this right
      ;; literals
      [(INT) ...]
@@ -456,7 +456,7 @@
      [(TRUE) ...]
      [(FALSE) ...]
      [(NULLPTR) ...]
-     [(THIS) ...]
+     [(THIS) $1]
      [(COLONCOLON ID) ...]
      [(ID) ...])
     )))

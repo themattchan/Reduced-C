@@ -21,10 +21,13 @@
 ;; provide function is-initialized?
 (struct var (id static type arrays value))
 (struct val (id static type value))
+(struct lit (type value))
 
-(struct type (id ptrs))
+(struct type (id ptrs))                 ; flesh this out...
+;; define builtin types here
 
 (struct block (code))
+
 
 ;; dims is list of ints, normalize to vector
 (struct arrays (dims))
