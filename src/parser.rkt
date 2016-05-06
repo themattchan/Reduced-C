@@ -265,6 +265,7 @@
               SEMI)
       (rc/extern-func $5 $4 $6)])
 
+    ;; TODO TODO TODO
     ; omfg, can this be simplified
     (type
      [(decorated-type) ...]
@@ -286,25 +287,25 @@
      [(type) $1]
      [(VOID) $1])
 
-    ;; TODO: turn into a number in normalization pass
-    ;; How would this change the contract types??
+    ;; ?pointer-list :: int >= 0
     (?pointer-list
-     [() ...]
-     [(pointer-list) ...])
+     [() 0]
+     [(pointer-list) $1])
+    ;; pointer-list :: int > 0
     (pointer-list
-     [(STAR pointer-list) ...]
-     [() ...])
+     [(STAR pointer-list) (add1 $2)]
+     [() 0])
 
     (?array-list
-     [() ...]
-     [(LBRACK const-expr RBRACK ?array-list)...])
+     [() '()]
+     [(LBRACK const-expr RBRACK ?array-list) (cons $2 $4)])
 
     (code-block
-     [(LBRACE ?stmt-list RBRACE) ...])
+     [(LBRACE ?stmt-list RBRACE) (rc/block $2)])
 
     (?stmt-list
-     [() ...]
-     [(stmt stmt-list)...])
+     [() '()]
+     [(stmt stmt-list) (cons $1 $2)])
 
     (stmt
      [(var-decl)                    $1]
@@ -316,26 +317,29 @@
      [(foreach-stmt)                $1]
      [(BREAK SEMI)                  $1]
      [(CONTINUE SEMI)               $1]
-;;     [(EXIT VOID SEMI)              (list $1 $3)]
      [(EXIT LPAR expr RPAR SEMI)    (list $1 $3)]
 
-     [(RETURN SEMI) $1]
+     [(RETURN SEMI) (list $1 'VOID)]
      [(RETURN expr SEMI) (list $1 $2)]
-     ;read
+
+     ; IO
      [(CIN ISTREAM designator SEMI) ...]
      [(COUT OSTREAM write-pair-list SEMI) ...]
+
+     ; object creation
      [(NEW designator ?ctor-call SEMI) ...]
      [(DELETE designator SEMI) ...])
 
     (param-list
-     [(param-decl) '()]
-     [(param-decl COMMA param-list)....])
-    (param-decl
+     [(param-decl) (list $1)]
+     [(param-decl COMMA param-list) (cons $1 $3)])
+    (param-decl  ; these are vars
      [(type ?ref ID ?array-list) ....])
 
     (?ref
      [() ...]
      [(AND) ...])
+
     (?init
      [(ASSIGN expr)...]
      [() ...])
@@ -370,33 +374,24 @@
     (expr
      [(designator ASSIGN expr) ...]
      [(expr0) ...])
-
     (expr0
      [(expr0 OROR expr1) ...]
      [(expr1) $1])
-
     (expr1
      [(expr1 ANDAND expr2) ...]
      [(expr2) $1])
-
     (expr2
      [(expr2 OR expr3) ...]
      [(expr3) $1])
-
     (expr3
      [(expr3 XOR expr4) ...]
      [(expr4) $1])
-
     (expr4
      [(expr4 AND expr5) ...]
      [(expr5) $1])
-
     (expr5
      [(expr5 comparison expr6) ...]
      [(expr6) $1])
-    (comparison
-     [(EQ) $1]
-     [(NEQ) $1])
     (expr6
      [(expr6 relation expr7) ...]
      [(expr7) $1])
@@ -407,6 +402,9 @@
      [(expr8 mul-op designator)  ]
      [(designator) $1])
 
+    (comparison
+     [(EQ) $1]
+     [(NEQ) $1])
     (relation
      [(LT) $1]
      [(GT) $1]
@@ -422,6 +420,7 @@
     (inc-dec-op
      [(PLUSPLUS) $1]
      [(MINUSMINUS) $1])
+
     (designator [(designator0) $1])
     (desingator0
      [(STAR desingator0) ...]
