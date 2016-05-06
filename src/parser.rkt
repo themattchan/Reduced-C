@@ -86,7 +86,7 @@
    ; tokens with things in them
    [integer    (token-INT   (string->number lexeme))]
    [float      (token-FLOAT (string->number lexeme))]
-   [identifier (token-ID (string->symbol lexeme))]
+   [identifier (token-ID    (string->symbol lexeme))]
    [string     (token-STRING lexeme)]
 
    [(:: "(" (:* whitespace) ")") (token-VOID)]
@@ -176,25 +176,29 @@
 
     (extern-decl
      [(EXTERN decorated-basic-type ID ?array-list SEMI)
-      `(,$1 ,$2 ,$3 ,$4) ])
+      (rc/extern-var $3 $2 $4) ])
 
+    ;; TODO: check if type exists
     (var-decl
      [(?static decorated-type ID ?array-list ?init SEMI)
-      `(VAR ,(? $1) ,$2 ,$3 ,(? $4) ,(? $5))    ]
+      (rc/var $3 $1 $2 $4 $5) ]
      [(?static AUTO ID ASSIGN expr SEMI)
-      `(VAR ,(? $1) $2 $3 $5) ]
+      ;; TODO: type inference
+      (rc/var $3 $1 $2 $2 $5)]
      [(?static struct-type ID ?array-list ?ctor-call SEMI)
-      `(VAR ,(? $1) $2 $3 ,(? $4) ,(? $5))])
+      ;; TODO: value should be value of ctor-call, [[$5]]
+      ;; also struct-type should have been previously defined
+      (rc/var $3 $1 $2 $4 $5)])
 
     (const-decl
      [(?static CONST basic-type ID ASSIGN const-expr SEMI)
-      `(,$2 ,(? $1) ,$3 ,$4 ,$6)]
+      (rc/val $4 $1 $3 $6)]
      [(?static CONST AUTO ID ASSIGN const-expr SEMI)
       ;; TODO: infer type, maybe in a separate pass?
-      `(,$2 ,(? $1) ,$3 ,$4 ,$6)])
+      (rc/val $4 $1 $3 $6)])
 
     (?static
-     [(STATIC) $1]
+     [(STATIC) #t]
      [()       #f])
 
     (struct-def-decl
@@ -210,6 +214,7 @@
      [(field-var) $1]
      [(field-var field-vars-list) (cons $1 $2)])
 
+    ;; what is this and why is it different from the vars above
     (field-var
      [(decorated-type ID ?array-list SEMI)
       (rc/var $2 $1 $3)])
@@ -223,10 +228,10 @@
      ; ctor
      [(ID VOID
           LBRACE ?stmt-list RPAREN)
-      (rc/ctor $1 $2 $4_)]
+      (rc/ctor $1 $2 $4)]
      [(ID LPAR param-list RPAR
           LBRACE ?stmt-list RPAREN)
-      (rc/ctor $1 $2 $4_)]
+      (rc/ctor $1 $2 $4)]
 
      ; dtor
      [(TILDE ID VOID
@@ -253,12 +258,12 @@
      [(EXTERN FUNCTION COLON ret-type ID
               VOID
               SEMI)
-      (rc/func-sig ($5 $4 $6))]
+      (rc/extern-func $5 $4 $6)]
 
      [(EXTERN FUNCTION COLON ret-type ID
               LPAR param-list RPAR
               SEMI)
-      (rc/func-sig ($5 $4 $6))])
+      (rc/extern-func $5 $4 $6)])
 
     ; omfg, can this be simplified
     (type
@@ -281,9 +286,11 @@
      [(type) $1]
      [(VOID) $1])
 
+    ;; TODO: turn into a number in normalization pass
+    ;; How would this change the contract types??
     (?pointer-list
      [() ...]
-     [(pointer-list)...])
+     [(pointer-list) ...])
     (pointer-list
      [(STAR pointer-list) ...]
      [() ...])
