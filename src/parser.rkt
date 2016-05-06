@@ -3,7 +3,7 @@
 (require parser-tools/lex
          parser-tools/yacc
          (prefix-in : parser-tools/lex-sre)
-         "rc-types.rkt")
+         "types.rkt")
 
 ;; Lex and Parse the reduced-c grammar into s-expressions.
 
@@ -15,9 +15,12 @@
 (define-empty-tokens reducedc-literals
   (; keywords
    CONST
-   FUNCTION AUTO STRUCT
+   FUNCTION
+   AUTO
+   STRUCT
    BREAK
    CONTINUE
+   RETURN
    DO
    FOR
    WHILE
@@ -38,7 +41,6 @@
 
    TRUE
    FALSE
-   RETURN
 
    ; symbols and operators
    SEMI
