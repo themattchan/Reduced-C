@@ -419,24 +419,29 @@
 
     ;; TODO: need some forms for these "functions"
     ;; should generate somewhat normalized code
+
+    ;; (FUNCALL fun arg-list)
+    ;; how to distinguish FUNCALLs from everything else?
+    ;; mark everything as FUNCALL
+
     (designator [(designator0) $1])
 
     (desingator0
      [(STAR desingator0) `(DEREF ,$2)]
      [(AND desingator0) `(REF ,$2)]
      [(BANG desingator0) `(NOT ,$2)]
-     [(SIZEOF LPAR desingator0 RPAR) `(,$1 ,$3)] ; hmmm... treat these all as funcalls
-     [(SIZEOF LPAR type ?array-list RPAR) `(,$1 ,$3 ,$4)]
-     [(LPAR decorated-type RPAR designator0) `(CAST ,$2 ,$4)]
-     [(inc-dec-op desingator0) `(,$1 ,$2)]
+     [(SIZEOF LPAR desingator0 RPAR) `(FUNCALL ,$1 (,$3))] ; hmmm... treat these all as funcalls
+     [(SIZEOF LPAR type ?array-list RPAR) `(FUNCALL ,$1 (,$3 ,$4))]
+     [(LPAR decorated-type RPAR designator0) `(FUNCALL CAST (,$2 ,$4))]
+     [(inc-dec-op desingator0) `(FUNCALL ,(string->symbol (~a 'PRE- $1)) ,$2)]
      [(desingator1) $1])
 
     (designator1
      [(designator1 DOT ID) `(MEMBER ,$1 ,$3)]
      [(designator1 LBRACK expr RBRACK) ...] ; array access
      [(designator1 ARROW ID) `(MEMBER (DEREF ,$1) ,$3)]
-     [(designator1 inc-dec-op) `(POST-INC ,$1)]
-     [(designator1 VOID) `(FUNCALL ,$1 ,$3)]
+     [(designator1 inc-dec-op) `(FUNCALL ,(string->symbol (~a 'POST- $1)) ,$2)]
+     [(designator1 VOID) `(FUNCALL ,$1 ())]
      [(designator1 LPAR expr-list RPAR) `(FUNCALL ,$1 ,$3)]
      [(designator2) $1])
 
