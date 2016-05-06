@@ -142,6 +142,13 @@
    ["]"        (token-RBRACE   )]
    ))
 
+(define (just x)
+  (not (eq? x #f)))
+
+(define-syntax (? x)
+  (syntax-case
+      [(_ x) #'(when (just x) x)]))
+
 ;;  (() -> symbol) -> sexpr
 (define reducedc-parser
   (parser
@@ -167,20 +174,28 @@
      [(func-def)        $1])
 
     (extern-decl
-     [(EXTERN decorated-basic-type ID ?array-list SEMI) ...])
+     [(EXTERN decorated-basic-type ID ?array-list SEMI)
+      `(,$1 ,$2 ,$3 ,$4)
+        ])
 
     (var-decl
-     [(?static decorated-type ID ?array-list ?init SEMI) ...]
-     [(?static AUTO ID ASSIGN expr SEMI) ...]
-     [(?static struct-type ID ?array-list ?ctor-call SEMI) ...])
+     [(?static decorated-type ID ?array-list ?init SEMI)
+      `('VAR ,(? $1) ,$2 ,$3 ,(? $4) ,(? $5))    ]
+     [(?static AUTO ID ASSIGN expr SEMI)
+      `('VAR ,(? $1) $2 $3 $5) ]
+     [(?static struct-type ID ?array-list ?ctor-call SEMI)
+      `('VAR ,(? $1) $2 $3 ,(? $4) ,(? $5))])
 
     (const-decl
-     [(?static CONST basic-type ID ASSIGN const-expr SEMI) ...]
-     [(?static CONST AUTO ID ASSIGN const-expr SEMI) ...])
+     [(?static CONST basic-type ID ASSIGN const-expr SEMI)
+      `(,$2 ,(? $1) ,$3 ,$4 ,$6)]
+     [(?static CONST AUTO ID ASSIGN const-expr SEMI)
+      ;; TODO: infer type, maybe in a separate pass?
+      `(,$2 ,(? $1) ,$3 ,$4 ,$6)])
 
     (?static
-     [(STATIC) (Just $1)]
-     [()       (None)])
+     [(STATIC) $1]
+     [()       #f])
 
     (struct-def-decl
      [(STRUCT ID LBRACE
@@ -356,8 +371,9 @@
      [(expr7 add-op expr8)...]
      [(expr8) $1])
     (expr8
-     [(expr8 mul-op designator) ...]
+     [(expr8 mul-op designator)  ]
      [(designator) $1])
+
     (relation
      [(LT) $1]
      [(GT) $1]
@@ -367,9 +383,9 @@
      [(PLUS) $1]
      [(MINUS) $1])
     (mul-op
-     [(STAR) ...]
-     [(SLASH) ...]
-     [(PERCENT) ...])
+     [(STAR) 'TIMES]
+     [(SLASH) 'DIVIDE]
+     [(PERCENT) 'MOD])
     (inc-dec-op
      [(PLUSPLUS) $1]
      [(MINUSMINUS) $1])
