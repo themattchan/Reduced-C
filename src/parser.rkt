@@ -37,7 +37,7 @@
    FLOAT_T
    INT_T
    BOOL_T
-   VOID
+   VOID                                 ; VOID == UNIT == NULL
 
    TRUE
    FALSE
@@ -153,6 +153,8 @@
 (define-syntax (? x)
   (syntax-case
       [(_ x) #'(when (not (eq? x #f)) x)]))
+
+; TODO: make a list of all the symbols in the target grammar
 
 ;;  (() -> symbol) -> sexpr
 (define reducedc-parser
@@ -327,16 +329,16 @@
     (param-list
      [(param-decl) (list $1)]
      [(param-decl COMMA param-list) (cons $1 $3)])
-    (param-decl  ; these are vars
+    (param-decl  ; these are vars... what is this ref business
      [(type ?ref ID ?array-list) ....])
 
     (?ref
-     [() ...]
-     [(AND) ...])
+     [() #f]
+     [(AND) 'REF])
 
     (?init
      [(ASSIGN expr)...]
-     [() ...])
+     [() 'VOID])
     (?ctor-call
      [(COLON VOID)....]
      [(COLON LPAR expr-list RPAR)....]
@@ -359,45 +361,45 @@
      [(ENDL) ...])
 
     (const-expr
-     [(expr)...])
+     [(expr) $1])
 
     (expr-list
-     [(expr COMMA expr-list) ...]
-     [(expr) ...])
+     [(expr COMMA expr-list) (cons $1 $3)]
+     [(expr) (list $1)])
 
     (expr
-     [(designator ASSIGN expr) ...]
-     [(expr0) ...])
+     [(designator ASSIGN expr) `(ASSIGN ,$1 ,$3)]
+     [(expr0) $1])
     (expr0
-     [(expr0 OROR expr1) ...]
+     [(expr0 OROR expr1) `(LOR ,$1 ,$3)]
      [(expr1) $1])
     (expr1
-     [(expr1 ANDAND expr2) ...]
+     [(expr1 ANDAND expr2) `(LAND ,$1 ,$3)]
      [(expr2) $1])
     (expr2
-     [(expr2 OR expr3) ...]
+     [(expr2 OR expr3) `(BOR ,$1 ,$3)]
      [(expr3) $1])
     (expr3
-     [(expr3 XOR expr4) ...]
+     [(expr3 XOR expr4) `(BXOR ,$1 ,$3)]
      [(expr4) $1])
     (expr4
-     [(expr4 AND expr5) ...]
+     [(expr4 AND expr5) `(BAND ,$1 ,$3)]
      [(expr5) $1])
     (expr5
-     [(expr5 comparison expr6) ...]
+     [(expr5 comparison expr6) `(,$2 ,$1 ,$3)]
      [(expr6) $1])
     (expr6
-     [(expr6 relation expr7) ...]
+     [(expr6 relation expr7) `(,$2 ,$1 ,$3)]
      [(expr7) $1])
     (expr7
-     [(expr7 add-op expr8)...]
+     [(expr7 add-op expr8) `(,$2 ,$1 ,$3)]
      [(expr8) $1])
     (expr8
-     [(expr8 mul-op designator)  ]
+     [(expr8 mul-op designator) `(,$2 ,$1 ,$3)]
      [(designator) $1])
 
     (comparison
-     [(EQ) $1]
+     [(EQ)  $1]
      [(NEQ) $1])
     (relation
      [(LT) $1]
@@ -415,28 +417,34 @@
      [(PLUSPLUS) $1]
      [(MINUSMINUS) $1])
 
+    ;; TODO: need some forms for these "functions"
+    ;; should generate somewhat normalized code
     (designator [(designator0) $1])
+
     (desingator0
-     [(STAR desingator0) ...]
-     [(AND desingator0) ...]
-     [(BANG desingator0) ...]
-     [(SIZEOF LPAR desingator0 RPAR) ...]
-     [(SIZEOF LPAR type ?array-list RPAR) ...]
-     [(LPAR decorated-type RPAR designator0) ...]
-     [(inc-dec-op desingator0) ...]
-     [(desingator1) ...])
+     [(STAR desingator0) `(DEREF ,$2)]
+     [(AND desingator0) `(REF ,$2)]
+     [(BANG desingator0) `(NOT ,$2)]
+     [(SIZEOF LPAR desingator0 RPAR) `(,$1 ,$3)] ; hmmm... treat these all as funcalls
+     [(SIZEOF LPAR type ?array-list RPAR) `(,$1 ,$3 ,$4)]
+     [(LPAR decorated-type RPAR designator0) `(CAST ,$2 ,$4)]
+     [(inc-dec-op desingator0) `(,$1 ,$2)]
+     [(desingator1) $1])
+
     (designator1
-     [(designator1 DOT ID) ...]
-     [(designator1 LBRACK expr RBRACK) ...]
-     [(designator1 ARROW ID) ...]
-     [(designator1 inc-dec-op) ...]
-     [(designator1 VOID) ...]
-     [(designator1 LPAR expr-list RPAR) ...]
-     [(designator2) ...])
-    (desingator2
-     [(PLUS desingator2) ...]
-     [(MINUS desingator2) ...]
+     [(designator1 DOT ID) `(MEMBER ,$1 ,$3)]
+     [(designator1 LBRACK expr RBRACK) ...] ; array access
+     [(designator1 ARROW ID) `(MEMBER (DEREF ,$1) ,$3)]
+     [(designator1 inc-dec-op) `(POST-INC ,$1)]
+     [(designator1 VOID) `(FUNCALL ,$1 ,$3)]
+     [(designator1 LPAR expr-list RPAR) `(FUNCALL ,$1 ,$3)]
+     [(designator2) $1])
+
+    (designator2
+     [(PLUS designator2) ]
+     [(MINUS designator2) ...]
      [(LPAR expr RPAR) ...]
+     ;; literals
      [(INT) ...]
      [(FLOAT) ...]
      [(STR) ...]
