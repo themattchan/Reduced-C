@@ -2,16 +2,18 @@
 
 (require parser-tools/lex
          parser-tools/yacc
-         (prefix-in : parser-tools/lex-sre)
-         #;"maybe.rkt")
+         (prefix-in : parser-tools/lex-sre))
 
-;; Parse the reduced-c grammar into s-expressions.
+;; Lex and Parse the reduced-c grammar into s-expressions.
 
+;; if these are already the labels for the actual datums
+;; then we can discard the additional empty type token
 (define-tokens reducedc-datas
   (FLOAT INT ID STRING))
 
 (define-empty-tokens reducedc-literals
-  (CONST
+  (; keywords
+   CONST
    FUNCTION AUTO STRUCT
    BREAK
    CONTINUE
@@ -27,15 +29,17 @@
    INOUT
    IN
 
-   FLOAT_T   ; types
+   ; types
+   FLOAT_T
    INT_T
-   VOID_T
    BOOL_T
+   VOID
 
    TRUE
    FALSE
    RETURN
 
+   ; symbols and operators
    SEMI
    PLUS
    MINUS
@@ -65,10 +69,6 @@
   ))
 
 (define-lex-abbrevs
-  ;; [letter     (:or (:/ "a" "z") (:/ #\A #\Z) )]
-  ;; [digit      (:/ #\0 #\9)]
-  ;; [identifier (:: letter (:* (:or letter digit #\_ #\?)))]
-
   [integer    (:+ numeric)]
   [float      (:: (:+ numeric) #\. (:* numeric))]
   [identifier (:: alphabetic (:* (:or alphabetic numeric "_-")))]
@@ -88,7 +88,7 @@
    [identifier (token-ID (string->symbol lexeme))]
    [string     (token-STRING lexeme)]
 
-   [(:: "(" whitespace ")") (token-VOID)]
+   [(:: "(" (:* whitespace) ")") (token-VOID)]
 
     ; constants
    [(eof)       '()             ]
@@ -111,7 +111,7 @@
    ["in"       (token-IN       )]
    ["float"    (token-FLOAT_T  )]
    ["int"      (token-INT_T    )]
-   ["void"     (token-VOID_T   )]
+   ["void"     (token-VOID     )]
    ["bool"     (token-BOOL_T   )]
    ["true"     (token-TRUE     )]
    ["false"    (token-FALSE    )]
@@ -145,12 +145,9 @@
    ["}"        (token-RBRACE   )]
    ))
 
-(define (just x)
-  (not (eq? x #f)))
-
 (define-syntax (? x)
   (syntax-case
-      [(_ x) #'(when (just x) x)]))
+      [(_ x) #'(when (not (eq? x #f)) x)]))
 
 ;;  (() -> symbol) -> sexpr
 (define reducedc-parser
